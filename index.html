@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flyer Customizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            position: relative;
+            width: 800px;
+            max-width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #flyer {
+            width: 100%;
+            display: block;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 10px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #ddd;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 300px;
+            cursor: pointer;
+        }
+
+        .btn-download {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-download:hover {
+            background-color: #45a049;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 100%;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Custum flyer</h1>
+
+    <div class="container">
+        <img id="flyer" src="flyer.svg" alt="Flyer">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <input type="file" id="imageUpload" accept="image/*">
+        <button class="btn-download" id="downloadBtn">Télécharger le résultat</button>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const flyer = document.getElementById('flyer');
+        const canvas = document.getElementById('canvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const ctx = canvas.getContext('2d');
+
+        flyer.onload = function() {
+            // Set the canvas size to match the flyer
+            canvas.width = flyer.width;
+            canvas.height = flyer.height;
+        };
+
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Clear previous content
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        // Draw the flyer on the canvas first
+                        ctx.drawImage(flyer, 0, 0, flyer.width, flyer.height);
+
+                        // Draw the uploaded image in the placeholder area
+                        const x = 213.30;
+                        const y = 313.20;
+                        const width = 373;
+                        const height = 358;
+
+                        // Clip the canvas to create rounded corners for the image
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(x + 10, y);
+                        ctx.arcTo(x + width, y, x + width, y + height, 15);
+                        ctx.arcTo(x + width, y + height, x, y + height, 15);
+                        ctx.arcTo(x, y + height, x, y, 15);
+                        ctx.arcTo(x, y, x + width, y, 15);
+                        ctx.clip();
+
+                        // Resize image to fit the placeholder with radius
+                        ctx.drawImage(img, x, y, width, height);
+                        ctx.restore();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            // Convert canvas content to a downloadable image
+            const link = document.createElement('a');
+            link.download = 'flyer_personnalise.png';
+            // Utilisation de toDataURL avec le format PNG (haute qualité par défaut)
+            link.href = canvas.toDataURL('image/png', 1.0); // 1.0 pour la meilleure qualité
+            link.click();
+        });
+    </script>
+</body>
+</html>
