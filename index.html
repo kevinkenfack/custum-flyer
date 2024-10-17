@@ -25,8 +25,9 @@
 
         .container {
             position: relative;
-            width: 800px;
-            max-width: 100%;
+            width: 100%; /* Full width */
+            max-width: 800px; /* Max width for desktop */
+            height: auto; /* Height auto to keep aspect ratio */
             border: 2px solid #ddd;
             border-radius: 10px;
             overflow: hidden;
@@ -34,7 +35,8 @@
         }
 
         #flyer {
-            width: 100%;
+            width: 100%; /* Full width */
+            height: auto; /* Auto height to keep aspect ratio */
             display: block;
         }
 
@@ -42,6 +44,8 @@
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
             border-radius: 10px;
         }
 
@@ -86,7 +90,7 @@
     </style>
 </head>
 <body>
-    <h1>Custum flyer</h1>
+    <h1>Personnalisez votre flyer</h1>
 
     <div class="container">
         <img id="flyer" src="flyer.svg" alt="Flyer">
@@ -107,8 +111,8 @@
 
         flyer.onload = function() {
             // Set the canvas size to match the flyer
-            canvas.width = flyer.width;
-            canvas.height = flyer.height;
+            canvas.width = flyer.clientWidth; // Use clientWidth for responsive design
+            canvas.height = flyer.clientHeight; // Use clientHeight for responsive design
         };
 
         imageUpload.addEventListener('change', function(e) {
@@ -122,7 +126,7 @@
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                         // Draw the flyer on the canvas first
-                        ctx.drawImage(flyer, 0, 0, flyer.width, flyer.height);
+                        ctx.drawImage(flyer, 0, 0, flyer.clientWidth, flyer.clientHeight);
 
                         // Draw the uploaded image in the placeholder area
                         const x = 213.30;
