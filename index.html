@@ -242,7 +242,7 @@
             async loadFlyerBase() {
                 this.showLoading(true);
                 try {
-                    this.flyerBase = await this.loadImage('flyer.svg'); // Remplacez par l'URL de votre image de flyer
+                    this.flyerBase = await this.loadImage('flyer.svg');
                     this.render();
                     this.isInitialized = true;
                 } catch (error) {
@@ -303,10 +303,10 @@
                 // effacer le canvas
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-                // dessiner le flyer de base
+                // dessine le flyer de base
                 this.ctx.drawImage(this.flyerBase, 0, 0, this.FLYER_WIDTH, this.FLYER_HEIGHT);
 
-                // Draw user image if exists
+                // dessine limage de lutulisateur
                 if (this.userImage) {
                     this.ctx.save();
 
@@ -321,7 +321,7 @@
                     this.ctx.closePath();
                     this.ctx.clip();
 
-                    // dessiner limage de lutulisateur
+                    // dessine limage de lutulisateur
                     this.ctx.drawImage(this.userImage, x, y, width, height);
                     this.ctx.restore();
                 }
