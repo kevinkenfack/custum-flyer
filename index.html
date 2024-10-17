@@ -3,94 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flyer Customizer</title>
+    <title>Personnalisez votre flyer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #f9f9f9;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             padding: 20px;
-            box-sizing: border-box;
         }
 
         h1 {
             color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
             margin-bottom: 20px;
         }
 
         .container {
             position: relative;
-            width: 100%; /* Full width */
-            max-width: 800px; /* Max width for desktop */
-            height: auto; /* Height auto to keep aspect ratio */
-            border: 2px solid #ddd;
+            width: 100%;
+            max-width: 800px;
+            margin: 20px 0;
+            background-color: white;
+            border: 1px solid #ddd;
             border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         #flyer {
-            width: 100%; /* Full width */
-            height: auto; /* Auto height to keep aspect ratio */
-            display: block;
+            width: 100%;
+            border-radius: 10px;
         }
 
         #canvas {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
             border-radius: 10px;
         }
 
         .controls {
-            margin-top: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-top: 20px;
         }
 
-        input[type="file"] {
+        .controls input[type="file"] {
             padding: 10px;
-            margin-bottom: 10px;
-            background-color: #ddd;
+            background-color: #f0f0f0;
             border: 1px solid #ccc;
             border-radius: 5px;
+            margin-bottom: 15px;
             width: 100%;
             max-width: 300px;
-            cursor: pointer;
         }
 
-        .btn-download {
+        .controls button {
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-color: #007BFF;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            font-size: 16px;
         }
 
-        .btn-download:hover {
-            background-color: #45a049;
+        .controls button:hover {
+            background-color: #0056b3;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .container {
-                width: 100%;
-                border: none;
+                padding: 10px;
+            }
+
+            .controls input[type="file"] {
+                max-width: 100%;
             }
         }
     </style>
 </head>
 <body>
+
     <h1>Personnalisez votre flyer</h1>
+    <p class="description">L'image à télécharger doit avoir une taille de 373x358 pixels pour un résultat optimal.</p>
 
     <div class="container">
         <img id="flyer" src="flyer.svg" alt="Flyer">
@@ -99,7 +109,7 @@
 
     <div class="controls">
         <input type="file" id="imageUpload" accept="image/*">
-        <button class="btn-download" id="downloadBtn">Télécharger le résultat</button>
+        <button id="downloadBtn">Télécharger le résultat</button>
     </div>
 
     <script>
@@ -110,9 +120,8 @@
         const ctx = canvas.getContext('2d');
 
         flyer.onload = function() {
-            // Set the canvas size to match the flyer
-            canvas.width = flyer.clientWidth; // Use clientWidth for responsive design
-            canvas.height = flyer.clientHeight; // Use clientHeight for responsive design
+            canvas.width = flyer.width;
+            canvas.height = flyer.height;
         };
 
         imageUpload.addEventListener('change', function(e) {
@@ -122,19 +131,14 @@
                 reader.onload = function(event) {
                     const img = new Image();
                     img.onload = function() {
-                        // Clear previous content
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(flyer, 0, 0, flyer.width, flyer.height);
 
-                        // Draw the flyer on the canvas first
-                        ctx.drawImage(flyer, 0, 0, flyer.clientWidth, flyer.clientHeight);
-
-                        // Draw the uploaded image in the placeholder area
                         const x = 213.30;
                         const y = 313.20;
                         const width = 373;
                         const height = 358;
 
-                        // Clip the canvas to create rounded corners for the image
                         ctx.save();
                         ctx.beginPath();
                         ctx.moveTo(x + 10, y);
@@ -144,7 +148,6 @@
                         ctx.arcTo(x, y, x + width, y, 15);
                         ctx.clip();
 
-                        // Resize image to fit the placeholder with radius
                         ctx.drawImage(img, x, y, width, height);
                         ctx.restore();
                     };
@@ -155,11 +158,9 @@
         });
 
         downloadBtn.addEventListener('click', function() {
-            // Convert canvas content to a downloadable image
             const link = document.createElement('a');
             link.download = 'flyer_personnalise.png';
-            // Utilisation de toDataURL avec le format PNG (haute qualité par défaut)
-            link.href = canvas.toDataURL('image/png', 1.0); // 1.0 pour la meilleure qualité
+            link.href = canvas.toDataURL();
             link.click();
         });
     </script>
