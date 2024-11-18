@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personnalisez votre Flyer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4a90e2;
@@ -32,42 +33,50 @@
             border-radius: var(--border-radius);
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 800px;
-            padding: 30px;
+            max-width: 1000px;
+            padding: 20px;
+        }
+
+        .instructions {
+            background-color: #f0f4f8;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9rem;
         }
 
         .preview-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .canvas-wrapper {
-            flex: 1;
-            max-height: 500px;
-            overflow: auto;
-            border: 2px dashed #e0e0e0;
-            border-radius: var(--border-radius);
-        }
-
-        #mainCanvas {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .controls {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
-        .image-controls {
+        .image-crop-container {
+            width: 100%;
+            max-height: 400px;
             display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #e0e0e0;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #cropperImage {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
         }
 
         .btn {
+            flex-grow: 1;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -75,6 +84,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.3s;
+            text-align: center;
         }
 
         .btn:hover {
@@ -85,60 +95,46 @@
             background-color: var(--secondary-color);
         }
 
-        .info-text {
-            font-size: 0.9rem;
-            color: #888;
-            text-align: center;
-            margin-top: 10px;
+        #mainCanvas {
+            max-width: 100%;
+            height: auto;
         }
 
-        .message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            border-radius: var(--border-radius);
-            width: auto;
-            max-width: 400px;
-            text-align: center;
-            display: none;
-        }
-
-        .success {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .error {
-            background-color: #e74c3c;
-            color: white;
+        @media (min-width: 768px) {
+            .preview-container {
+                flex-direction: row;
+            }
+            .image-crop-container {
+                flex: 1;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="message success" id="successMessage">Téléchargement réussi!</div>
-    <div class="message error" id="errorMessage">Une erreur est survenue. Essayez à nouveau.</div>
-
     <div class="container">
-        <div class="preview-container">
-            <div class="canvas-wrapper">
-                <canvas id="mainCanvas"></canvas>
-            </div>
+        <div class="instructions">
+            🎨 Personnalisez votre flyer en 3 étapes simples : 
+            Importez une image, recadrez-la, puis téléchargez votre création unique !
         </div>
-        <div class="controls">
-            <input type="file" id="imageUpload" accept="image/*">
-            <div class="image-controls">
-                <button id="zoomIn" class="btn btn-secondary">Zoom +</button>
-                <button id="zoomOut" class="btn btn-secondary">Zoom -</button>
+
+        <div class="preview-container">
+            <div class="image-crop-container">
+                <img id="cropperImage" src="" style="display:none;">
             </div>
-            <button id="downloadBtn" class="btn">Télécharger</button>
-            <p class="info-text">Téléchargez le flyer après l'avoir personnalisée en ajustant votre photo</p>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <input type="file" id="imageUpload" accept="image/*" style="display:none;">
+            <button id="selectImageBtn" class="btn">📸 Sélectionner Image</button>
+            <button id="cropBtn" class="btn btn-secondary" disabled>✂️ Recadrer</button>
+            <button id="downloadBtn" class="btn" disabled>⬇️ Télécharger</button>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
-        class AdvancedFlyerEditor {
+        class ProFlyerEditor {
             constructor() {
                 this.FLYER_WIDTH = 8334;
                 this.FLYER_HEIGHT = 10410;
@@ -152,17 +148,14 @@
                 this.canvas = document.getElementById('mainCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.imageUpload = document.getElementById('imageUpload');
+                this.selectImageBtn = document.getElementById('selectImageBtn');
+                this.cropBtn = document.getElementById('cropBtn');
                 this.downloadBtn = document.getElementById('downloadBtn');
-                this.zoomInBtn = document.getElementById('zoomIn');
-                this.zoomOutBtn = document.getElementById('zoomOut');
-                this.successMessage = document.getElementById('successMessage');
-                this.errorMessage = document.getElementById('errorMessage');
+                this.cropperImage = document.getElementById('cropperImage');
 
                 this.flyerBase = null;
                 this.userImage = null;
-                this.scale = 1;
-                this.offsetX = 0;
-                this.offsetY = 0;
+                this.cropper = null;
 
                 this.init();
             }
@@ -177,20 +170,20 @@
                 this.setupEventListeners();
             }
 
+            setupEventListeners() {
+                this.selectImageBtn.addEventListener('click', () => this.imageUpload.click());
+                this.imageUpload.addEventListener('change', (e) => this.handleImageUpload(e));
+                this.cropBtn.addEventListener('click', () => this.cropImage());
+                this.downloadBtn.addEventListener('click', () => this.handleDownload());
+            }
+
             async loadFlyerBase() {
                 try {
                     this.flyerBase = await this.loadImage('flyer.png');
-                    this.render();
+                    this.renderFlyer();
                 } catch (error) {
-                    this.showMessage('error', "Erreur de chargement du flyer");
+                    console.error("Erreur de chargement du flyer", error);
                 }
-            }
-
-            setupEventListeners() {
-                this.imageUpload.addEventListener('change', (e) => this.handleImageUpload(e));
-                this.downloadBtn.addEventListener('click', () => this.handleDownload());
-                this.zoomInBtn.addEventListener('click', () => this.zoom(0.1));
-                this.zoomOutBtn.addEventListener('click', () => this.zoom(-0.1));
             }
 
             loadImage(src) {
@@ -206,22 +199,44 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
-                const imageUrl = URL.createObjectURL(file);
-                this.userImage = await this.loadImage(imageUrl);
-                URL.revokeObjectURL(imageUrl);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.cropperImage.src = e.target.result;
+                    this.cropperImage.style.display = 'block';
 
-                this.scale = 1;
-                this.offsetX = 0;
-                this.offsetY = 0;
-                this.render();
+                    if (this.cropper) {
+                        this.cropper.destroy();
+                    }
+
+                    this.cropper = new Cropper(this.cropperImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        minCropBoxWidth: 100,
+                        minCropBoxHeight: 100
+                    });
+
+                    this.cropBtn.disabled = false;
+                    this.downloadBtn.disabled = true;
+                };
+                reader.readAsDataURL(file);
             }
 
-            zoom(delta) {
-                this.scale = Math.max(0.5, Math.min(2, this.scale + delta));
-                this.render();
+            cropImage() {
+                if (!this.cropper) return;
+
+                const croppedCanvas = this.cropper.getCroppedCanvas({
+                    width: 2830,
+                    height: 2830
+                });
+
+                this.loadImage(croppedCanvas.toDataURL()).then(img => {
+                    this.userImage = img;
+                    this.renderFlyer();
+                    this.downloadBtn.disabled = false;
+                });
             }
 
-            render() {
+            renderFlyer() {
                 if (!this.flyerBase) return;
 
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -229,62 +244,23 @@
 
                 if (this.userImage) {
                     const {x, y, width, height} = this.IMAGE_ZONE;
-                    this.ctx.save();
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(x, y);
-                    this.ctx.lineTo(x + width, y);
-                    this.ctx.lineTo(x + width, y + height);
-                    this.ctx.lineTo(x, y + height);
-                    this.ctx.closePath();
-                    this.ctx.clip();
-
-                    const scaledWidth = width * this.scale;
-                    const scaledHeight = height * this.scale;
-                    const centeredX = x + (width - scaledWidth) / 2 + this.offsetX;
-                    const centeredY = y + (height - scaledHeight) / 2 + this.offsetY;
-
-                    this.ctx.drawImage(
-                        this.userImage, 
-                        0, 0, 
-                        this.userImage.width, this.userImage.height,
-                        centeredX, centeredY, 
-                        scaledWidth, scaledHeight
-                    );
-                    this.ctx.restore();
+                    this.ctx.drawImage(this.userImage, x, y, width, height);
                 }
             }
 
             handleDownload() {
-                try {
-                    const link = document.createElement('a');
-                    const dataUrl = this.canvas.toDataURL('image/png', 0.8); // Compression de la qualité de l'image
-                    link.download = 'flyer_personnalise.png';
-                    link.href = dataUrl;
-                    link.click();
-                    this.showMessage('success', 'Téléchargement en cour..');
-                } catch (error) {
-                    this.showMessage('error', 'Une erreur est survenue. Essayez à nouveau.');
-                }
-            }
+                if (!this.userImage) return;
 
-            showMessage(type, text) {
-                if (type === 'success') {
-                    this.successMessage.style.display = 'block';
-                    this.errorMessage.style.display = 'none';
-                    this.successMessage.textContent = text;
-                } else {
-                    this.successMessage.style.display = 'none';
-                    this.errorMessage.style.display = 'block';
-                    this.errorMessage.textContent = text;
-                }
-                setTimeout(() => {
-                    this.successMessage.style.display = 'none';
-                    this.errorMessage.style.display = 'none';
-                }, 3000);
+                const link = document.createElement('a');
+                link.download = 'flyer_personnalise.png';
+                link.href = this.canvas.toDataURL('image/png');
+                link.click();
             }
         }
 
-        new AdvancedFlyerEditor();
+        document.addEventListener('DOMContentLoaded', () => {
+            new ProFlyerEditor();
+        });
     </script>
 </body>
 </html>
