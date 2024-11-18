@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personnalisez votre flyer</title>
+    <title>Personnalisez votre Flyer</title>
     <style>
         :root {
-            --primary-color: #007BFF;
-            --hover-color: #0056b3;
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --border-radius: 10px;
-            --container-width: min(200px, 90vw);
+            --primary-color: #4a90e2;
+            --secondary-color: #2c3e50;
+            --border-radius: 12px;
+            --error-color: #e74c3c;
         }
 
         * {
@@ -21,247 +19,168 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
         }
 
-        .header {
-            text-align: center;
-            max-width: 600px;
-            width: 100%;
-        }
-
-        h1 {
-            color: #333;
-            font-size: clamp(20px, 4vw, 24px);
-            margin-bottom: 10px;
-        }
-
-        .description {
-            font-size: clamp(12px, 3vw, 14px);
-            color: #666;
-            padding: 0 10px;
-        }
-
-        .canvas-container {
-            position: relative;
-            width: var(--container-width);
-            height: calc(var(--container-width) * 1.25); /* 2500/2000 = 1.25 ratio */
+        .container {
             background-color: white;
-            border: 1px solid #ddd;
             border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+        }
+
+        .preview-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            max-height: 500px;
             overflow: auto;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 2px dashed #e0e0e0;
+            border-radius: var(--border-radius);
         }
 
         #mainCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: auto;
             display: block;
         }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .controls {
-            width: 100%;
-            max-width: 600px;
             display: flex;
             flex-direction: column;
             gap: 15px;
-            padding: 0 20px;
         }
 
-        .file-input-wrapper {
-            width: 100%;
+        .image-controls {
+            display: flex;
+            gap: 10px;
         }
 
-        .file-input-wrapper input {
-            width: 100%;
-            padding: 12px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .status-message {
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-            text-align: center;
-        }
-
-        .status-message.error {
-            background-color: #ffe6e6;
-            color: var(--error-color);
-            display: block;
-        }
-
-        .status-message.success {
-            background-color: #e6ffe6;
-            color: var(--success-color);
-            display: block;
-        }
-
-        .button {
-            width: 100%;
-            padding: 15px 20px;
+        .btn {
             background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 10px 15px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: clamp(14px, 3vw, 16px);
-            transition: all 0.3s ease;
+            transition: background-color 0.3s;
         }
 
-        .button:hover {
-            background-color: var(--hover-color);
-        }
-
-        .button:disabled {
-            background-color: #cccccc;
+        .btn:disabled {
+            background-color: #a0c4e8;
             cursor: not-allowed;
         }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
+        .btn:hover:not(:disabled) {
+            background-color: #357abd;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            margin-top: 10px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Personnalisez votre flyer</h1>
-        <p class="description">L'image à télécharger doit avoir une taille de <strong>936x890</strong> pixels pour un résultat optimal.</p><br>
-        <p class="description">Vous pouvez redimensioner votre photo sur des outils en ligne comme <a href="https://www.iloveimg.com/fr/redimensionner-image" target="_blank">I loveIMG</a> c'est totalement gratuit.</p>
-    </div>
-
-    <div class="canvas-container">
-        <canvas id="mainCanvas"></canvas>
-    </div>
-
-    <div class="controls">
-        <div class="file-input-wrapper">
-            <input type="file" id="imageUpload" accept="image/*">
+    <div class="container">
+        <div class="preview-container">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas"></canvas>
+            </div>
         </div>
-        <div class="status-message"></div>
-        <button id="downloadBtn" class="button" disabled>Télécharger le résultat</button>
-    </div>
-
-    <div class="loading-overlay">
-        <div class="spinner"></div>
+        <div class="controls">
+            <input type="file" id="imageUpload" accept="image/*">
+            <div id="errorContainer" class="error-message"></div>
+            <div class="image-controls">
+                <button id="zoomIn" class="btn btn-secondary" disabled>Zoom +</button>
+                <button id="zoomOut" class="btn btn-secondary" disabled>Zoom -</button>
+            </div>
+            <button id="downloadBtn" class="btn" disabled>Télécharger</button>
+        </div>
     </div>
 
     <script>
-        class FlyerEditor {
+        class AdvancedFlyerEditor {
             constructor() {
-                // Dimensions réelles du flyer
-                this.FLYER_WIDTH = 2000;
-                this.FLYER_HEIGHT = 2500;
-
-                // Zone d'image personnaliser
+                this.FLYER_WIDTH = 8334;
+                this.FLYER_HEIGHT = 10410;
                 this.IMAGE_ZONE = {
-                    x: 532,
-                    y: 783.70,
-                    width: 936,
-                    height: 890,
-                    radius: 44.043
+                    x: 2750,
+                    y: 4500,
+                    width: 2830,
+                    height: 2830
                 };
 
-                // DOM
                 this.canvas = document.getElementById('mainCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.imageUpload = document.getElementById('imageUpload');
                 this.downloadBtn = document.getElementById('downloadBtn');
-                this.loadingOverlay = document.querySelector('.loading-overlay');
-                this.statusMessage = document.querySelector('.status-message');
+                this.zoomInBtn = document.getElementById('zoomIn');
+                this.zoomOutBtn = document.getElementById('zoomOut');
+                this.errorContainer = document.getElementById('errorContainer');
 
-                // State
                 this.flyerBase = null;
                 this.userImage = null;
-                this.isInitialized = false;
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
 
-                // Initialisation
                 this.init();
             }
 
             async init() {
-                this.initializeCanvas();
-                await this.loadFlyerBase();
-                this.setupEventListeners();
-            }
+                try {
+                    this.canvas.width = this.FLYER_WIDTH;
+                    this.canvas.height = this.FLYER_HEIGHT;
+                    this.ctx.imageSmoothingEnabled = true;
+                    this.ctx.imageSmoothingQuality = 'high';
 
-            initializeCanvas() {
-                // dimensions du canevas
-                this.canvas.width = this.FLYER_WIDTH;
-                this.canvas.height = this.FLYER_HEIGHT;
-                this.ctx.imageSmoothingEnabled = true;
-                this.ctx.imageSmoothingQuality = 'high';
+                    await this.loadFlyerBase();
+                    this.setupEventListeners();
+                } catch (error) {
+                    this.showError("Impossible de charger le modèle de flyer.");
+                }
             }
 
             async loadFlyerBase() {
-                this.showLoading(true);
                 try {
-                    this.flyerBase = await this.loadImage('flyer.svg');
+                    this.flyerBase = await this.loadImage('forex.svg');
                     this.render();
-                    this.isInitialized = true;
                 } catch (error) {
-                    this.showError("Erreur lors du chargement du flyer de base.");
-                } finally {
-                    this.showLoading(false);
+                    throw new Error("Erreur de chargement du flyer de base");
                 }
             }
 
             setupEventListeners() {
                 this.imageUpload.addEventListener('change', (e) => this.handleImageUpload(e));
                 this.downloadBtn.addEventListener('click', () => this.handleDownload());
+                this.zoomInBtn.addEventListener('click', () => this.zoom(0.1));
+                this.zoomOutBtn.addEventListener('click', () => this.zoom(-0.1));
             }
 
             loadImage(src) {
                 return new Promise((resolve, reject) => {
                     const img = new Image();
+                    img.crossOrigin = 'Anonymous';
                     img.onload = () => resolve(img);
-                    img.onerror = () => reject(new Error('Erreur de chargement de l\'image'));
+                    img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`));
                     img.src = src;
                 });
             }
@@ -270,88 +189,113 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
-                if (!this.validateImage(file)) {
-                    this.showError("Veuillez sélectionner une image valide (JPG, PNG ou WebP).");
+                if (!file.type.startsWith('image/')) {
+                    this.showError('Veuillez sélectionner un fichier image valide.');
                     return;
                 }
 
-                this.showLoading(true);
                 try {
-                    const imageUrl = URL.createObjectURL(file);
-                    this.userImage = await this.loadImage(imageUrl);
-                    URL.revokeObjectURL(imageUrl);
-
-                    this.showSuccess("Image chargée avec succès!");
-                    this.downloadBtn.disabled = false;
-                    this.render();
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const img = new Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.onload = () => {
+                            this.userImage = img;
+                            this.scale = 1;
+                            this.offsetX = 0;
+                            this.offsetY = 0;
+                            this.render();
+                            this.enableControls();
+                        };
+                        img.onerror = () => {
+                            this.showError('Impossible de charger cette image.');
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
                 } catch (error) {
-                    this.showError("Erreur lors du chargement de l'image.");
-                    this.downloadBtn.disabled = true;
-                } finally {
-                    this.showLoading(false);
+                    this.showError('Une erreur est survenue lors du chargement de l\'image.');
                 }
             }
 
-            validateImage(file) {
-                const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-                return validTypes.includes(file.type);
+            enableControls() {
+                this.downloadBtn.disabled = false;
+                this.zoomInBtn.disabled = false;
+                this.zoomOutBtn.disabled = false;
+            }
+
+            disableControls() {
+                this.downloadBtn.disabled = true;
+                this.zoomInBtn.disabled = true;
+                this.zoomOutBtn.disabled = true;
+            }
+
+            showError(message) {
+                this.errorContainer.textContent = message;
+                this.disableControls();
+                this.imageUpload.value = ''; // Reset file input
+            }
+
+            zoom(delta) {
+                this.scale = Math.max(0.5, Math.min(2, this.scale + delta));
+                this.render();
             }
 
             render() {
-                if (!this.isInitialized) return;
+                if (!this.flyerBase) return;
 
-                // effacer le canvas
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-                // dessine le flyer de base
                 this.ctx.drawImage(this.flyerBase, 0, 0, this.FLYER_WIDTH, this.FLYER_HEIGHT);
 
-                // dessine limage de lutulisateur
                 if (this.userImage) {
+                    const {x, y, width, height} = this.IMAGE_ZONE;
                     this.ctx.save();
-
-                    // arrondir les bords radius
                     this.ctx.beginPath();
-                    const {x, y, width, height, radius} = this.IMAGE_ZONE;
-                    this.ctx.moveTo(x + radius, y);
-                    this.ctx.arcTo(x + width, y, x + width, y + height, radius);
-                    this.ctx.arcTo(x + width, y + height, x, y + height, radius);
-                    this.ctx.arcTo(x, y + height, x, y, radius);
-                    this.ctx.arcTo(x, y, x + width, y, radius);
+                    this.ctx.moveTo(x, y);
+                    this.ctx.lineTo(x + width, y);
+                    this.ctx.lineTo(x + width, y + height);
+                    this.ctx.lineTo(x, y + height);
                     this.ctx.closePath();
                     this.ctx.clip();
 
-                    // dessine limage de lutulisateur
-                    this.ctx.drawImage(this.userImage, x, y, width, height);
+                    const scaledWidth = width * this.scale;
+                    const scaledHeight = height * this.scale;
+                    const centeredX = x + (width - scaledWidth) / 2 + this.offsetX;
+                    const centeredY = y + (height - scaledHeight) / 2 + this.offsetY;
+
+                    this.ctx.drawImage(
+                        this.userImage, 
+                        0, 0, 
+                        this.userImage.width, this.userImage.height,
+                        centeredX, centeredY, 
+                        scaledWidth, scaledHeight
+                    );
                     this.ctx.restore();
                 }
             }
 
             handleDownload() {
-                const link = document.createElement('a');
-                link.download = 'flyer_personnalise.png';
-                link.href = this.canvas.toDataURL('image/png', 1.0);
-                link.click();
-            }
-
-            showLoading(show) {
-                this.loadingOverlay.classList.toggle('active', show);
-            }
-
-            showError(message) {
-                this.statusMessage.textContent = message;
-                this.statusMessage.className = 'status-message error';
-            }
-
-            showSuccess(message) {
-                this.statusMessage.textContent = message;
-                this.statusMessage.className = 'status-message success';
+                try {
+                    const link = document.createElement('a');
+                    link.download = 'flyer_personnalise.png';
+                    
+                    this.canvas.toBlob((blob) => {
+                        if (blob) {
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                            URL.revokeObjectURL(link.href);
+                        } else {
+                            this.showError('Impossible de générer le flyer.');
+                        }
+                    }, 'image/png');
+                } catch (error) {
+                    this.showError('Une erreur est survenue lors du téléchargement.');
+                }
             }
         }
 
-        // Initialiser lespace de travail si le dom est pret
         document.addEventListener('DOMContentLoaded', () => {
-            new FlyerEditor();
+            new AdvancedFlyerEditor();
         });
     </script>
 </body>
