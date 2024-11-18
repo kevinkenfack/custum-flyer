@@ -9,7 +9,6 @@
             --primary-color: #4a90e2;
             --secondary-color: #2c3e50;
             --border-radius: 12px;
-            --error-color: #e74c3c;
         }
 
         * {
@@ -78,12 +77,7 @@
             transition: background-color 0.3s;
         }
 
-        .btn:disabled {
-            background-color: #a0c4e8;
-            cursor: not-allowed;
-        }
-
-        .btn:hover:not(:disabled) {
+        .btn:hover {
             background-color: #357abd;
         }
 
@@ -91,14 +85,41 @@
             background-color: var(--secondary-color);
         }
 
-        .error-message {
-            color: var(--error-color);
-            margin-top: 10px;
+        .info-text {
+            font-size: 0.9rem;
+            color: #888;
             text-align: center;
+            margin-top: 10px;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            width: auto;
+            max-width: 400px;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .error {
+            background-color: #e74c3c;
+            color: white;
         }
     </style>
 </head>
 <body>
+    <div class="message success" id="successMessage">Téléchargement réussi!</div>
+    <div class="message error" id="errorMessage">Une erreur est survenue. Essayez à nouveau.</div>
+
     <div class="container">
         <div class="preview-container">
             <div class="canvas-wrapper">
@@ -107,12 +128,12 @@
         </div>
         <div class="controls">
             <input type="file" id="imageUpload" accept="image/*">
-            <div id="errorContainer" class="error-message"></div>
             <div class="image-controls">
-                <button id="zoomIn" class="btn btn-secondary" disabled>Zoom +</button>
-                <button id="zoomOut" class="btn btn-secondary" disabled>Zoom -</button>
+                <button id="zoomIn" class="btn btn-secondary">Zoom +</button>
+                <button id="zoomOut" class="btn btn-secondary">Zoom -</button>
             </div>
-            <button id="downloadBtn" class="btn" disabled>Télécharger</button>
+            <button id="downloadBtn" class="btn">Télécharger</button>
+            <p class="info-text">Téléchargez le flyer après l'avoir personnalisée en ajustant votre photo</p>
         </div>
     </div>
 
@@ -134,7 +155,8 @@
                 this.downloadBtn = document.getElementById('downloadBtn');
                 this.zoomInBtn = document.getElementById('zoomIn');
                 this.zoomOutBtn = document.getElementById('zoomOut');
-                this.errorContainer = document.getElementById('errorContainer');
+                this.successMessage = document.getElementById('successMessage');
+                this.errorMessage = document.getElementById('errorMessage');
 
                 this.flyerBase = null;
                 this.userImage = null;
@@ -146,25 +168,21 @@
             }
 
             async init() {
-                try {
-                    this.canvas.width = this.FLYER_WIDTH;
-                    this.canvas.height = this.FLYER_HEIGHT;
-                    this.ctx.imageSmoothingEnabled = true;
-                    this.ctx.imageSmoothingQuality = 'high';
+                this.canvas.width = this.FLYER_WIDTH;
+                this.canvas.height = this.FLYER_HEIGHT;
+                this.ctx.imageSmoothingEnabled = true;
+                this.ctx.imageSmoothingQuality = 'high';
 
-                    await this.loadFlyerBase();
-                    this.setupEventListeners();
-                } catch (error) {
-                    this.showError("Impossible de charger le modèle de flyer.");
-                }
+                await this.loadFlyerBase();
+                this.setupEventListeners();
             }
 
             async loadFlyerBase() {
                 try {
-                    this.flyerBase = await this.loadImage('forex.svg');
+                    this.flyerBase = await this.loadImage('flyer.png');
                     this.render();
                 } catch (error) {
-                    throw new Error("Erreur de chargement du flyer de base");
+                    this.showMessage('error', "Erreur de chargement du flyer");
                 }
             }
 
@@ -178,9 +196,8 @@
             loadImage(src) {
                 return new Promise((resolve, reject) => {
                     const img = new Image();
-                    img.crossOrigin = 'Anonymous';
                     img.onload = () => resolve(img);
-                    img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`));
+                    img.onerror = reject;
                     img.src = src;
                 });
             }
@@ -189,51 +206,14 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
-                if (!file.type.startsWith('image/')) {
-                    this.showError('Veuillez sélectionner un fichier image valide.');
-                    return;
-                }
+                const imageUrl = URL.createObjectURL(file);
+                this.userImage = await this.loadImage(imageUrl);
+                URL.revokeObjectURL(imageUrl);
 
-                try {
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        const img = new Image();
-                        img.crossOrigin = 'Anonymous';
-                        img.onload = () => {
-                            this.userImage = img;
-                            this.scale = 1;
-                            this.offsetX = 0;
-                            this.offsetY = 0;
-                            this.render();
-                            this.enableControls();
-                        };
-                        img.onerror = () => {
-                            this.showError('Impossible de charger cette image.');
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                } catch (error) {
-                    this.showError('Une erreur est survenue lors du chargement de l\'image.');
-                }
-            }
-
-            enableControls() {
-                this.downloadBtn.disabled = false;
-                this.zoomInBtn.disabled = false;
-                this.zoomOutBtn.disabled = false;
-            }
-
-            disableControls() {
-                this.downloadBtn.disabled = true;
-                this.zoomInBtn.disabled = true;
-                this.zoomOutBtn.disabled = true;
-            }
-
-            showError(message) {
-                this.errorContainer.textContent = message;
-                this.disableControls();
-                this.imageUpload.value = ''; // Reset file input
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.render();
             }
 
             zoom(delta) {
@@ -277,26 +257,34 @@
             handleDownload() {
                 try {
                     const link = document.createElement('a');
+                    const dataUrl = this.canvas.toDataURL('image/png', 0.8); // Compression de la qualité de l'image
                     link.download = 'flyer_personnalise.png';
-                    
-                    this.canvas.toBlob((blob) => {
-                        if (blob) {
-                            link.href = URL.createObjectURL(blob);
-                            link.click();
-                            URL.revokeObjectURL(link.href);
-                        } else {
-                            this.showError('Impossible de générer le flyer.');
-                        }
-                    }, 'image/png');
+                    link.href = dataUrl;
+                    link.click();
+                    this.showMessage('success', 'Téléchargement en cour..');
                 } catch (error) {
-                    this.showError('Une erreur est survenue lors du téléchargement.');
+                    this.showMessage('error', 'Une erreur est survenue. Essayez à nouveau.');
                 }
+            }
+
+            showMessage(type, text) {
+                if (type === 'success') {
+                    this.successMessage.style.display = 'block';
+                    this.errorMessage.style.display = 'none';
+                    this.successMessage.textContent = text;
+                } else {
+                    this.successMessage.style.display = 'none';
+                    this.errorMessage.style.display = 'block';
+                    this.errorMessage.textContent = text;
+                }
+                setTimeout(() => {
+                    this.successMessage.style.display = 'none';
+                    this.errorMessage.style.display = 'none';
+                }, 3000);
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            new AdvancedFlyerEditor();
-        });
+        new AdvancedFlyerEditor();
     </script>
 </body>
 </html>
