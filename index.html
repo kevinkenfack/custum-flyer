@@ -220,7 +220,7 @@
             }
 
             async loadFlyerBase() {
-                this.flyerBase = await this.loadImage('flyer.png');
+                this.flyerBase = await this.loadImage('forex.jpg');
                 this.renderFlyer();
             }
 
@@ -332,7 +332,7 @@
                     const {x, y, width, height} = this.IMAGE_ZONE;
                     tempCtx.drawImage(this.userImage, x, y, width, height);
 
-                    const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.7);
+                    const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
 
                     const link = document.createElement('a');
                     link.download = 'flyer_personnalise.jpg';
