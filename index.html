@@ -2,30 +2,36 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Personnalisez votre Flyer</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4a90e2;
             --secondary-color: #2c3e50;
             --border-radius: 12px;
+            --text-color: #333;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            touch-action: manipulation;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f6f9;
+            color: var(--text-color);
+            line-height: 1.6;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .container {
@@ -67,12 +73,14 @@
         #cropperImage {
             max-width: 100%;
             max-height: 100%;
+            object-fit: contain;
         }
 
         .controls {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            margin-top: 15px;
         }
 
         .btn {
@@ -83,17 +91,26 @@
             padding: 10px 15px;
             border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             text-align: center;
+            font-size: 16px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .btn:hover {
+        .btn:hover, .btn:focus {
             background-color: #357abd;
+            outline: none;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
+            transform: none;
         }
 
         .btn-secondary {
@@ -103,6 +120,8 @@
         #mainCanvas {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 15px 0;
         }
 
         #messageContainer {
@@ -116,14 +135,27 @@
             display: none;
             z-index: 1000;
             text-align: center;
+            max-width: 90%;
+            word-wrap: break-word;
         }
 
-        @media (min-width: 768px) {
-            .preview-container {
-                flex-direction: row;
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
             }
-            .image-crop-container {
-                flex: 1;
+            .btn {
+                width: 100%;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+
+        /* Fallback for older browsers */
+        @supports not (display: flex) {
+            .container {
+                display: block;
+                width: 100%;
             }
         }
     </style>
@@ -131,23 +163,23 @@
 <body>
     <div id="messageContainer"></div>
     <div class="container">
-        <div class="instructions">
+        <div class="instructions" aria-live="polite">
             🎨 Personnalisez votre flyer en 3 étapes simples : 
             Importez une image, recadrez-la, puis téléchargez votre création unique !
         </div>
 
         <div class="preview-container">
             <div class="image-crop-container">
-                <img id="cropperImage" src="" style="display:none;">
+                <img id="cropperImage" src="" alt="Image à recadrer" style="display:none;">
             </div>
-            <canvas id="mainCanvas"></canvas>
+            <canvas id="mainCanvas" aria-label="Prévisualisation du flyer"></canvas>
         </div>
 
         <div class="controls">
-            <input type="file" id="imageUpload" accept="image/*" style="display:none;">
-            <button id="selectImageBtn" class="btn">📸 Sélectionner Image</button>
-            <button id="cropBtn" class="btn btn-secondary" disabled>✂️ Recadrer</button>
-            <button id="downloadBtn" class="btn" disabled>⬇️ Télécharger</button>
+            <input type="file" id="imageUpload" accept="image/*" style="display:none;" aria-hidden="true">
+            <button id="selectImageBtn" class="btn" aria-label="Sélectionner une image">📸 Sélectionner Image</button>
+            <button id="cropBtn" class="btn btn-secondary" disabled aria-label="Recadrer l'image">✂️ Recadrer</button>
+            <button id="downloadBtn" class="btn" disabled aria-label="Télécharger le flyer">⬇️ Télécharger</button>
         </div>
     </div>
 
@@ -164,6 +196,12 @@
                     height: 2830
                 };
 
+                this.initializeElements();
+                this.setupEventListeners();
+                this.initializeCanvas();
+            }
+
+            initializeElements() {
                 this.canvas = document.getElementById('mainCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.imageUpload = document.getElementById('imageUpload');
@@ -176,11 +214,60 @@
                 this.flyerBase = null;
                 this.userImage = null;
                 this.cropper = null;
-
-                this.init();
             }
 
-            showMessage(message, type = 'success') {
+            setupEventListeners() {
+                this.selectImageBtn.addEventListener('click', () => this.imageUpload.click());
+                this.imageUpload.addEventListener('change', this.handleImageUpload.bind(this));
+                this.cropBtn.addEventListener('click', this.cropImage.bind(this));
+                this.downloadBtn.addEventListener('click', this.handleDownload.bind(this));
+
+                // Ajout de support pour les appareils tactiles
+                this.selectImageBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.imageUpload.click();
+                });
+            }
+
+            initializeCanvas() {
+                // Vérification de la prise en charge du canvas
+                if (!this.canvas.getContext) {
+                    this.showMessage('Votre navigateur ne supporte pas le canvas', 'error');
+                    return;
+                }
+
+                this.canvas.width = this.FLYER_WIDTH;
+                this.canvas.height = this.FLYER_HEIGHT;
+                this.ctx.imageSmoothingEnabled = true;
+                this.ctx.imageSmoothingQuality = 'high';
+
+                this.cropBtn.disabled = true;
+                this.downloadBtn.disabled = true;
+
+                this.loadFlyerBase();
+            }
+
+            async loadFlyerBase() {
+                try {
+                    this.flyerBase = await this.loadImage('forex.jpg');
+                    this.renderFlyer();
+                } catch (error) {
+                    this.showMessage('Impossible de charger le modèle de flyer', 'error');
+                    console.error(error);
+                }
+            }
+
+            loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`));
+                    img.crossOrigin = 'Anonymous'; // Gestion des problèmes de CORS
+                    img.src = src;
+                });
+            }
+
+            showMessage(message, type = 'success', duration = 3000) {
                 const colors = {
                     success: '#4CAF50',
                     error: '#f44336'
@@ -190,60 +277,27 @@
                 this.messageContainer.style.backgroundColor = colors[type];
                 this.messageContainer.style.display = 'block';
 
-                setTimeout(() => {
-                    this.messageContainer.style.display = 'none';
-                }, 3000);
-            }
-
-            async init() {
-                this.canvas.width = this.FLYER_WIDTH;
-                this.canvas.height = this.FLYER_HEIGHT;
-                this.ctx.imageSmoothingEnabled = true;
-                this.ctx.imageSmoothingQuality = 'high';
-
-                this.cropBtn.disabled = true;
-                this.downloadBtn.disabled = true;
-
-                try {
-                    await this.loadFlyerBase();
-                    this.setupEventListeners();
-                } catch (error) {
-                    this.showMessage('Impossible de charger le modèle de flyer', 'error');
-                }
-            }
-
-            setupEventListeners() {
-                this.selectImageBtn.addEventListener('click', () => this.imageUpload.click());
-                this.imageUpload.addEventListener('change', (e) => this.handleImageUpload(e));
-                this.cropBtn.addEventListener('click', () => this.cropImage());
-                this.downloadBtn.addEventListener('click', () => this.handleDownload());
-            }
-
-            async loadFlyerBase() {
-                this.flyerBase = await this.loadImage('forex.jpg');
-                this.renderFlyer();
-            }
-
-            loadImage(src) {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => resolve(img);
-                    img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`));
-                    img.src = src;
+                // Utilisation de requestAnimationFrame pour de meilleures performances
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        this.messageContainer.style.display = 'none';
+                    }, duration);
                 });
             }
 
-            async handleImageUpload(event) {
+            handleImageUpload(event) {
                 const file = event.target.files[0];
                 if (!file) return;
 
-                if (!file.type.startsWith('image/')) {
-                    this.showMessage('Veuillez sélectionner un fichier image valide', 'error');
+                // Validation améliorée des fichiers
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    this.showMessage('Format image non supporté. Utilisez JPEG, PNG ou WebP', 'error');
                     return;
                 }
 
-                if (file.size > 5 * 1024 * 1024) {
-                    this.showMessage('La taille de l\'image ne doit pas dépasser 5 Mo', 'error');
+                if (file.size > 10 * 1024 * 1024) {
+                    this.showMessage('La taille de l\'image ne doit pas dépasser 10 Mo', 'error');
                     return;
                 }
 
@@ -260,7 +314,10 @@
                         aspectRatio: 1,
                         viewMode: 1,
                         minCropBoxWidth: 100,
-                        minCropBoxHeight: 100
+                        minCropBoxHeight: 100,
+                        movable: false,
+                        scalable: false,
+                        zoomable: true
                     });
 
                     this.cropBtn.disabled = false;
@@ -284,7 +341,9 @@
 
                 const croppedCanvas = this.cropper.getCroppedCanvas({
                     width: 2830,
-                    height: 2830
+                    height: 2830,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
                 });
 
                 if (!croppedCanvas) {
@@ -292,7 +351,7 @@
                     return;
                 }
 
-                this.loadImage(croppedCanvas.toDataURL()).then(img => {
+                this.loadImage(croppedCanvas.toDataURL('image/jpeg', 0.9)).then(img => {
                     this.userImage = img;
                     this.renderFlyer();
                     
@@ -347,8 +406,18 @@
             }
         }
 
+        // Gestion des erreurs globales
+        window.addEventListener('error', (event) => {
+            console.error('Erreur non gérée:', event.error);
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
-            new ProFlyerEditor();
+            // Vérification de la compatibilité des fonctionnalités
+            if ('Cropper' in window && 'FileReader' in window) {
+                new ProFlyerEditor();
+            } else {
+                document.body.innerHTML = '<p>Votre navigateur est trop ancien. Merci de le mettre à jour.</p>';
+            }
         });
     </script>
 </body>
